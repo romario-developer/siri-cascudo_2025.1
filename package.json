@@ -3,18 +3,21 @@
     "version": "1.0.0",
     "private": true,
     "workspaces": [
-      "packages/*"
+        "packages/*"
     ],
     "scripts": {
-      "start:client": "yarn workspace @siri-cascudo/client start",
-      "start:waiter": "yarn workspace @siri-cascudo/waiter start",
-      "start:server": "yarn workspace @siri-cascudo/server start",
-      "start": "concurrently \"yarn start:server\" \"yarn start:client\" \"yarn start:waiter\"",
-      "build:client": "yarn workspace @siri-cascudo/client build",
-      "build:waiter": "yarn workspace @siri-cascudo/waiter build",
-      "build": "yarn build:client && yarn build:waiter"
+        "start:client": "yarn workspace @siri-cascudo/client start",
+        "start:waiter": "yarn workspace @siri-cascudo/waiter start",
+        "start:server": "yarn workspace @siri-cascudo/server start",
+        "start": "concurrently \"yarn start:server\" \"yarn start:client\" \"yarn start:waiter\"",
+        "build:client": "yarn workspace @siri-cascudo/client build",
+        "build:waiter": "yarn workspace @siri-cascudo/waiter build",
+        "build": "yarn build:client && yarn build:waiter"
     },
     "devDependencies": {
-      "concurrently": "^8.2.0"
+        "concurrently": "^8.2.0"
+    },
+    "dependencies": {
+        "react-icons": "^5.5.0"
     }
-  }
+}

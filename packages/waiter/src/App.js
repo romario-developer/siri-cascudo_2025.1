@@ -5,6 +5,7 @@ import styled from 'styled-components';
 // Importações de páginas
 import Login from './pages/Login';
 import Tables from './pages/Tables';
+import Order from './pages/Order';
 
 const AppContainer = styled.div`
   display: flex;
@@ -35,7 +36,7 @@ function App() {
         } />
         <Route path="/order/:tableId" element={
           <ProtectedRoute>
-            <div>Página de Pedido (placeholder)</div>
+            <Order />
           </ProtectedRoute>
         } />
         <Route path="/history" element={

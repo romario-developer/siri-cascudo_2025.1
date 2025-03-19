@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Menu from './pages/Menu';
+import Cart from './pages/Cart';
 
 const AppContainer = styled.div`
   display: flex;
@@ -29,7 +30,7 @@ function App() {
         } />
         <Route path="/cart" element={
           <Layout>
-            <div>Carrinho (placeholder)</div>
+            <Cart />
           </Layout>
         } />
         <Route path="/checkout" element={

@@ -1,8 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { FaArrowLeft, FaPlus, FaMinus, FaTrash, FaUtensils, FaPrint, FaCheck, FaCreditCard } from 'react-icons/fa';
+import { 
+  FaArrowLeft, 
+  FaPlus, 
+  FaMinus, 
+  FaTrash, 
+  FaUtensils, 
+  FaPrint, 
+  FaCheck, 
+  FaCreditCard,
+  FaEdit,
+  FaStickyNote,
+  FaTimes,
+  FaExclamationTriangle,
+  FaRegClock,
+  FaBan
+} from 'react-icons/fa';
 
+// Componentes estilizados para a interface
 const Header = styled.header`
   background-color: #D32F2F;
   color: white;
@@ -123,6 +139,24 @@ const ActionButton = styled.button`
   
   &:hover {
     background-color: ${props => props.primary ? '#b81c1c' : '#f5f5f5'};
+  }
+`;
+
+const SearchContainer = styled.div`
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #D32F2F;
   }
 `;
 
@@ -276,6 +310,13 @@ const OrderItem = styled.div`
   display: flex;
   padding: 1rem;
   border-bottom: 1px solid #eee;
+  flex-direction: column;
+`;
+
+const OrderItemHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
 `;
 
 const OrderItemDetails = styled.div`
@@ -285,6 +326,19 @@ const OrderItemDetails = styled.div`
 const OrderItemName = styled.h3`
   font-size: 1rem;
   margin: 0 0 0.25rem 0;
+  display: flex;
+  align-items: center;
+`;
+
+const OrderItemBadge = styled.span`
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+  background-color: ${props => props.color || '#f0f0f0'};
+  color: ${props => props.textColor || '#333'};
 `;
 
 const OrderItemPrice = styled.div`
@@ -338,16 +392,20 @@ const QuantityValue = styled.div`
   font-size: 0.875rem;
 `;
 
-const RemoveButton = styled.button`
+const ItemActionButton = styled.button`
   display: flex;
   align-items: center;
+  gap: 0.25rem;
   background: none;
   border: none;
-  color: #999;
+  color: #666;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
   
   &:hover {
+    background-color: #f0f0f0;
     color: #D32F2F;
   }
 `;
@@ -355,6 +413,40 @@ const RemoveButton = styled.button`
 const OrderItemTotal = styled.div`
   font-weight: 500;
   margin-left: auto;
+`;
+
+const OrderItemNotes = styled.div`
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #666;
+  display: flex;
+  align-items: flex-start;
+`;
+
+const NoteIcon = styled.span`
+  display: flex;
+  align-items: center;
+  margin-right: 0.5rem;
+  color: #D32F2F;
+`;
+
+const OrderItemCustomizations = styled.div`
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #666;
+`;
+
+const CustomizationItem = styled.div`
+  display: flex;
+  align-items: center;
+  
+  &:before {
+    content: '•';
+    margin-right: 0.25rem;
+  }
 `;
 
 const OrderFooter = styled.div`
@@ -393,7 +485,8 @@ const OrderButton = styled(ActionButton)`
   flex: 1;
 `;
 
-const OrderModal = styled.div`
+// Modais
+const Modal = styled.div`
   position: fixed;
   top: 0;
   left: 0;
@@ -413,11 +506,32 @@ const ModalContent = styled.div`
   width: 100%;
   max-width: 500px;
   padding: 1.5rem;
+  max-height: 90vh;
+  overflow-y: auto;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 `;
 
 const ModalTitle = styled.h2`
   font-size: 1.5rem;
-  margin: 0 0 1rem 0;
+  margin: 0;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #666;
+  
+  &:hover {
+    color: #D32F2F;
+  }
 `;
 
 const ModalText = styled.p`
@@ -428,6 +542,7 @@ const ModalActions = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+  margin-top: 1.5rem;
 `;
 
 const ModalButton = styled.button`
@@ -444,17 +559,163 @@ const ModalButton = styled.button`
   }
 `;
 
+const FormGroup = styled.div`
+  margin-bottom: 1rem;
+`;
+
+const FormLabel = styled.label`
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+`;
+
+const TextArea = styled.textarea`
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-height: 100px;
+  resize: vertical;
+  
+  &:focus {
+    outline: none;
+    border-color: #D32F2F;
+  }
+`;
+
+const CheckboxGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+`;
+
+const CheckboxItem = styled.label`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+`;
+
+const Checkbox = styled.input`
+  margin-right: 0.5rem;
+`;
+
+const RadioGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+`;
+
+const RadioItem = styled.label`
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: #f5f5f5;
+  }
+  
+  ${props => props.selected && `
+    border-color: #D32F2F;
+    background-color: #FFF5F5;
+  `}
+`;
+
+const Radio = styled.input`
+  margin-right: 0.5rem;
+`;
+
+const PaymentIcon = styled.span`
+  display: flex;
+  align-items: center;
+  margin-right: 0.5rem;
+  font-size: 1.25rem;
+`;
+
+const OrderHistory = styled.div`
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+`;
+
+const OrderHistoryTitle = styled.h3`
+  font-size: 1rem;
+  margin: 0 0 0.5rem 0;
+`;
+
+const OrderHistoryItem = styled.div`
+  padding: 0.5rem;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  display: flex;
+  justify-content: space-between;
+`;
+
+const OrderHistoryStatus = styled.span`
+  font-weight: 500;
+  color: ${props => {
+    switch (props.status) {
+      case 'sent': return '#4CAF50';
+      case 'preparing': return '#FFC107';
+      case 'ready': return '#2196F3';
+      default: return '#666';
+    }
+  }};
+`;
+
+const TabsContainer = styled.div`
+  display: flex;
+  border-bottom: 1px solid #eee;
+`;
+
+const Tab = styled.button`
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid ${props => props.active ? '#D32F2F' : 'transparent'};
+  color: ${props => props.active ? '#D32F2F' : '#666'};
+  font-weight: ${props => props.active ? '500' : 'normal'};
+  cursor: pointer;
+  
+  &:hover {
+    color: #D32F2F;
+  }
+`;
+
 const Order = () => {
   const { tableId } = useParams();
   const navigate = useNavigate();
   
+  // Estados
   const [table, setTable] = useState(null);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [orderItems, setOrderItems] = useState([]);
   const [orderTotal, setOrderTotal] = useState(0);
+  
+  // Estados para modais
   const [showSendOrderModal, setShowSendOrderModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [showCustomizationModal, setShowCustomizationModal] = useState(false);
+  const [currentItemId, setCurrentItemId] = useState(null);
+  const [itemNotes, setItemNotes] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit');
+  
+  // Estados para o histórico de pedidos
+  const [orderHistory, setOrderHistory] = useState([]);
+  
+  // Estado para ingredientes disponíveis para remoção (exemplo)
+  const [availableIngredients, setAvailableIngredients] = useState([]);
+  const [removedIngredients, setRemovedIngredients] = useState([]);
   
   // Carregar dados da mesa e produtos
   useEffect(() => {
@@ -480,70 +741,88 @@ const Order = () => {
           name: "Hambúrguer Clássico",
           price: 24.90,
           category: "hamburger",
-          image: "/images/classic-burger.jpg"
+          image: "/images/classic-burger.jpg",
+          ingredients: [
+            "Pão", "Hambúrguer", "Queijo", "Alface", "Tomate", "Cebola", "Molho especial"
+          ]
         },
         {
           id: 2,
           name: "Hambúrguer de Frango",
           price: 22.90,
           category: "chicken",
-          image: "/images/chicken-burger.jpg"
+          image: "/images/chicken-burger.jpg",
+          ingredients: [
+            "Pão", "Frango empanado", "Queijo", "Alface", "Tomate", "Maionese"
+          ]
         },
         {
           id: 3,
           name: "Hambúrguer Vegetariano",
           price: 26.90,
           category: "vegetarian",
-          image: "/images/veggie-burger.jpg"
+          image: "/images/veggie-burger.jpg",
+          ingredients: [
+            "Pão", "Hambúrguer de legumes", "Queijo", "Alface", "Tomate", "Cebola roxa", "Molho especial"
+          ]
         },
         {
           id: 4,
           name: "Siri Especial",
           price: 32.90,
           category: "hamburger",
-          image: "/images/special-burger.jpg"
+          image: "/images/special-burger.jpg",
+          ingredients: [
+            "Pão", "Hambúrguer duplo", "Queijo cheddar", "Bacon", "Cebola caramelizada", "Molho barbecue"
+          ]
         },
         {
           id: 5,
           name: "Batata Frita",
           price: 14.90,
           category: "sides",
-          image: "/images/fries.jpg"
+          image: "/images/fries.jpg",
+          ingredients: ["Batata", "Sal"]
         },
         {
           id: 6,
           name: "Onion Rings",
           price: 16.90,
           category: "sides",
-          image: "/images/onion-rings.jpg"
+          image: "/images/onion-rings.jpg",
+          ingredients: ["Cebola", "Farinha", "Temperos"]
         },
         {
           id: 7,
           name: "Refrigerante",
           price: 7.90,
           category: "drinks",
-          image: "/images/soda.jpg"
+          image: "/images/soda.jpg",
+          ingredients: []
         },
         {
           id: 8,
           name: "Milkshake",
           price: 15.90,
           category: "drinks",
-          image: "/images/milkshake.jpg"
+          image: "/images/milkshake.jpg",
+          ingredients: ["Leite", "Sorvete", "Calda"]
         },
         {
           id: 9,
           name: "Brownie com Sorvete",
           price: 18.90,
           category: "desserts",
-          image: "/images/brownie.jpg"
+          image: "/images/brownie.jpg",
+          ingredients: ["Brownie", "Sorvete de baunilha", "Calda de chocolate"]
         },
         {
           id: 10,
           name: "Cheesecake",
           price: 16.90,
           category: "desserts",
-          image: "/images/cheesecake.jpg"
+          image: "/images/cheesecake.jpg",
+          ingredients: ["Massa de biscoito", "Cream cheese", "Calda de frutas vermelhas"]
         }
       ];
       
@@ -555,18 +834,42 @@ const Order = () => {
           id: 4,
           name: "Siri Especial",
           price: 32.90,
-          quantity: 1
+          quantity: 1,
+          notes: "Ponto médio da carne.",
+          removedIngredients: ["Bacon"],
+          status: "sent",
+          sentAt: "20:35"
         },
         {
           id: 5,
           name: "Batata Frita",
           price: 14.90,
-          quantity: 2
+          quantity: 2,
+          notes: "",
+          removedIngredients: [],
+          status: "sent",
+          sentAt: "20:35"
         }
       ];
       
       setOrderItems(existingOrder);
-    }, 1000);
+      
+      // Histórico de pedidos
+      const historyData = [
+        {
+          timestamp: "20:35",
+          status: "sent",
+          description: "Pedido enviado para a cozinha"
+        },
+        {
+          timestamp: "20:40",
+          status: "preparing",
+          description: "Pedido em preparação"
+        }
+      ];
+      
+      setOrderHistory(historyData);
+    }, 500);
   }, [tableId]);
   
   // Atualizar total do pedido sempre que os itens forem alterados
@@ -574,6 +877,26 @@ const Order = () => {
     const total = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     setOrderTotal(total);
   }, [orderItems]);
+  
+  // Filtrar produtos com base na categoria e pesquisa
+  useEffect(() => {
+    let filtered = [...products];
+    
+    // Filtrar por categoria
+    if (activeCategory !== 'all') {
+      filtered = filtered.filter(product => product.category === activeCategory);
+    }
+    
+    // Filtrar por pesquisa
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(product => 
+        product.name.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredProducts(filtered);
+  }, [activeCategory, searchQuery, products]);
   
   // Categorias disponíveis
   const categories = [
@@ -586,18 +909,31 @@ const Order = () => {
     { id: 'desserts', name: 'Sobremesas' },
   ];
   
-  // Filtrar produtos por categoria
-  const filteredProducts = activeCategory === 'all'
-    ? products
-    : products.filter(product => product.category === activeCategory);
+  // Opções de pagamento
+  const paymentMethods = [
+    { id: 'credit', label: 'Cartão de Crédito', icon: <FaCreditCard /> },
+    { id: 'debit', label: 'Cartão de Débito', icon: <FaCreditCard /> },
+    { id: 'cash', label: 'Dinheiro', icon: <FaCreditCard /> },
+    { id: 'pix', label: 'PIX', icon: <FaCreditCard /> }
+  ];
   
+  // Manipuladores de eventos
   const handleCategoryChange = (categoryId) => {
     setActiveCategory(categoryId);
   };
   
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+  
   const handleAddProduct = (product) => {
     // Verificar se o produto já está no pedido
-    const existingItemIndex = orderItems.findIndex(item => item.id === product.id);
+    const existingItemIndex = orderItems.findIndex(item => 
+      item.id === product.id && 
+      !item.notes && 
+      item.removedIngredients?.length === 0 &&
+      item.status !== 'sent'
+    );
     
     if (existingItemIndex !== -1) {
       // Se já estiver no pedido, incrementar a quantidade
@@ -606,7 +942,13 @@ const Order = () => {
       setOrderItems(updatedItems);
     } else {
       // Se não estiver no pedido, adicionar com quantidade 1
-      setOrderItems([...orderItems, { ...product, quantity: 1 }]);
+      setOrderItems([...orderItems, { 
+        ...product, 
+        quantity: 1,
+        notes: '',
+        removedIngredients: [],
+        status: 'pending'
+      }]);
     }
   };
   
@@ -624,17 +966,102 @@ const Order = () => {
     setOrderItems(prevItems => prevItems.filter(item => item.id !== itemId));
   };
   
+  const handleOpenNotesModal = (itemId) => {
+    const item = orderItems.find(item => item.id === itemId);
+    if (item && item.status === 'sent') {
+      alert("Não é possível editar um item já enviado para a cozinha.");
+      return;
+    }
+    
+    setCurrentItemId(itemId);
+    setItemNotes(item.notes || '');
+    setShowNotesModal(true);
+  };
+  
+  const handleSaveNotes = () => {
+    setOrderItems(prevItems => 
+      prevItems.map(item => 
+        item.id === currentItemId ? { ...item, notes: itemNotes } : item
+      )
+    );
+    setShowNotesModal(false);
+  };
+  
+  const handleOpenCustomizationModal = (itemId) => {
+    const item = orderItems.find(item => item.id === itemId);
+    if (item && item.status === 'sent') {
+      alert("Não é possível editar um item já enviado para a cozinha.");
+      return;
+    }
+    
+    const product = products.find(p => p.id === itemId);
+    if (product && product.ingredients.length > 0) {
+      setCurrentItemId(itemId);
+      setAvailableIngredients(product.ingredients);
+      setRemovedIngredients(item.removedIngredients || []);
+      setShowCustomizationModal(true);
+    } else {
+      alert("Este produto não possui ingredientes para personalização.");
+    }
+  };
+  
+  const handleIngredientToggle = (ingredient) => {
+    if (removedIngredients.includes(ingredient)) {
+      setRemovedIngredients(removedIngredients.filter(i => i !== ingredient));
+    } else {
+      setRemovedIngredients([...removedIngredients, ingredient]);
+    }
+  };
+  
+  const handleSaveCustomization = () => {
+    setOrderItems(prevItems => 
+      prevItems.map(item => 
+        item.id === currentItemId ? { ...item, removedIngredients } : item
+      )
+    );
+    setShowCustomizationModal(false);
+  };
+  
   const handleSendOrder = () => {
+    // Verificar se há itens pendentes para enviar
+    const pendingItems = orderItems.filter(item => item.status === 'pending');
+    if (pendingItems.length === 0) {
+      alert("Não há novos itens para enviar à cozinha.");
+      return;
+    }
     setShowSendOrderModal(true);
   };
   
   const confirmSendOrder = () => {
     // Aqui você enviaria os dados para o backend
-    console.log("Enviando pedido:", orderItems);
-    setShowSendOrderModal(false);
+    console.log("Enviando pedido:", orderItems.filter(item => item.status === 'pending'));
     
-    // Simular resposta do servidor
-    alert("Pedido enviado com sucesso para a cozinha!");
+    // Atualizar status dos itens
+    const now = new Date();
+    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                       now.getMinutes().toString().padStart(2, '0');
+                       
+    setOrderItems(prevItems => 
+      prevItems.map(item => 
+        item.status === 'pending' ? { 
+          ...item, 
+          status: 'sent',
+          sentAt: timeString
+        } : item
+      )
+    );
+    
+    // Adicionar ao histórico
+    setOrderHistory([
+      ...orderHistory,
+      {
+        timestamp: timeString,
+        status: "sent",
+        description: "Novos itens enviados para a cozinha"
+      }
+    ]);
+    
+    setShowSendOrderModal(false);
   };
   
   const handlePayment = () => {
@@ -643,18 +1070,41 @@ const Order = () => {
   
   const confirmPayment = () => {
     // Lógica para processar pagamento
-    console.log("Processando pagamento:", orderTotal);
+    console.log("Processando pagamento:", {
+      total: orderTotal,
+      method: selectedPaymentMethod
+    });
+    
+    // Adicionar ao histórico
+    const now = new Date();
+    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                       now.getMinutes().toString().padStart(2, '0');
+                       
+    setOrderHistory([
+      ...orderHistory,
+      {
+        timestamp: timeString,
+        status: "completed",
+        description: `Pagamento realizado via ${
+          paymentMethods.find(m => m.id === selectedPaymentMethod)?.label
+        }`
+      }
+    ]);
+    
     setShowPaymentModal(false);
     
     // Após pagamento, voltar para a lista de mesas
-    alert("Pagamento processado com sucesso!");
-    navigate('/tables');
+    setTimeout(() => {
+      alert("Pagamento processado com sucesso!");
+      navigate('/tables');
+    }, 500);
   };
   
   const handleBackClick = () => {
     navigate('/tables');
   };
   
+  // Renderização condicional durante carregamento
   if (!table) {
     return (
       <Container>
@@ -662,6 +1112,10 @@ const Order = () => {
       </Container>
     );
   }
+  
+  // Determinar quais itens estão pendentes vs. enviados
+  const pendingItems = orderItems.filter(item => item.status === 'pending');
+  const sentItems = orderItems.filter(item => item.status === 'sent');
   
   return (
     <>
@@ -694,6 +1148,15 @@ const Order = () => {
         
         <OrderGrid>
           <MenuSection>
+            <SearchContainer>
+              <SearchInput
+                type="text"
+                placeholder="Buscar produtos..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+              />
+            </SearchContainer>
+            
             <CategoriesContainer>
               {categories.map(category => (
                 <CategoryButton 
@@ -719,10 +1182,20 @@ const Order = () => {
                   </ProductContent>
                 </ProductCard>
               ))}
+              
+              {filteredProducts.length === 0 && (
+                <div style={{ gridColumn: '1 / -1', padding: '2rem', textAlign: 'center', color: '#666' }}>
+                  Nenhum produto encontrado.
+                </div>
+              )}
             </ProductsGrid>
           </MenuSection>
           
           <OrderSection>
+            <TabsContainer>
+              <Tab active={true}>Comanda</Tab>
+            </TabsContainer>
+            
             <OrderTitle>Itens do Pedido</OrderTitle>
             
             <OrderItemsList>
@@ -732,41 +1205,146 @@ const Order = () => {
                   <p>Nenhum item adicionado ao pedido.</p>
                 </EmptyOrder>
               ) : (
-                orderItems.map(item => (
-                  <OrderItem key={item.id}>
-                    <OrderItemDetails>
-                      <OrderItemName>{item.name}</OrderItemName>
-                      <OrderItemPrice>R$ {item.price.toFixed(2)}</OrderItemPrice>
-                      
-                      <OrderItemActions>
-                        <QuantityControl>
-                          <QuantityButton
-                            round="left"
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                            disabled={item.quantity <= 1}
-                          >
-                            <FaMinus size={10} />
-                          </QuantityButton>
-                          <QuantityValue>{item.quantity}</QuantityValue>
-                          <QuantityButton
-                            round="right"
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <FaPlus size={10} />
-                          </QuantityButton>
-                        </QuantityControl>
-                        
-                        <RemoveButton onClick={() => handleRemoveItem(item.id)}>
-                          <FaTrash size={12} />
-                        </RemoveButton>
-                        
-                        <OrderItemTotal>
-                          R$ {(item.price * item.quantity).toFixed(2)}
-                        </OrderItemTotal>
-                      </OrderItemActions>
-                    </OrderItemDetails>
-                  </OrderItem>
-                ))
+                <>
+                  {/* Itens pendentes */}
+                  {pendingItems.length > 0 && (
+                    <>
+                      <div style={{ padding: '0.5rem 1rem', backgroundColor: '#f5f5f5', fontWeight: '500' }}>
+                        Novos Itens
+                      </div>
+                      {pendingItems.map(item => (
+                        <OrderItem key={`pending-${item.id}`}>
+                          <OrderItemHeader>
+                            <OrderItemDetails>
+                              <OrderItemName>
+                                {item.name}
+                                <OrderItemBadge 
+                                  color="#FFF3CD" 
+                                  textColor="#856404"
+                                >
+                                  Pendente
+                                </OrderItemBadge>
+                              </OrderItemName>
+                              <OrderItemPrice>R$ {item.price.toFixed(2)}</OrderItemPrice>
+                            </OrderItemDetails>
+                          </OrderItemHeader>
+                          
+                          {/* Personalizações */}
+                          {item.removedIngredients && item.removedIngredients.length > 0 && (
+                            <OrderItemCustomizations>
+                              <strong>Sem:</strong>
+                              {item.removedIngredients.map((ingredient, idx) => (
+                                <CustomizationItem key={idx}>
+                                  {ingredient}
+                                </CustomizationItem>
+                              ))}
+                            </OrderItemCustomizations>
+                          )}
+                          
+                          {/* Observações */}
+                          {item.notes && (
+                            <OrderItemNotes>
+                              <NoteIcon><FaStickyNote /></NoteIcon>
+                              <span>{item.notes}</span>
+                            </OrderItemNotes>
+                          )}
+                          
+                          <OrderItemActions>
+                            <QuantityControl>
+                              <QuantityButton
+                                round="left"
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                                disabled={item.quantity <= 1}
+                              >
+                                <FaMinus size={10} />
+                              </QuantityButton>
+                              <QuantityValue>{item.quantity}</QuantityValue>
+                              <QuantityButton
+                                round="right"
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                              >
+                                <FaPlus size={10} />
+                              </QuantityButton>
+                            </QuantityControl>
+                            
+                            <ItemActionButton onClick={() => handleOpenNotesModal(item.id)}>
+                              <FaStickyNote size={12} />
+                              Observações
+                            </ItemActionButton>
+                            
+                            <ItemActionButton onClick={() => handleOpenCustomizationModal(item.id)}>
+                              <FaEdit size={12} />
+                              Personalizar
+                            </ItemActionButton>
+                            
+                            <ItemActionButton onClick={() => handleRemoveItem(item.id)}>
+                              <FaTrash size={12} />
+                              Remover
+                            </ItemActionButton>
+                            
+                            <OrderItemTotal>
+                              R$ {(item.price * item.quantity).toFixed(2)}
+                            </OrderItemTotal>
+                          </OrderItemActions>
+                        </OrderItem>
+                      ))}
+                    </>
+                  )}
+                  
+                  {/* Itens enviados */}
+                  {sentItems.length > 0 && (
+                    <>
+                      <div style={{ padding: '0.5rem 1rem', backgroundColor: '#f5f5f5', fontWeight: '500' }}>
+                        Itens Enviados
+                      </div>
+                      {sentItems.map(item => (
+                        <OrderItem key={`sent-${item.id}`}>
+                          <OrderItemHeader>
+                            <OrderItemDetails>
+                              <OrderItemName>
+                                {item.name}
+                                <OrderItemBadge 
+                                  color="#D4EDDA" 
+                                  textColor="#155724"
+                                >
+                                  Enviado {item.sentAt}
+                                </OrderItemBadge>
+                              </OrderItemName>
+                              <OrderItemPrice>R$ {item.price.toFixed(2)}</OrderItemPrice>
+                            </OrderItemDetails>
+                          </OrderItemHeader>
+                          
+                          {/* Personalizações */}
+                          {item.removedIngredients && item.removedIngredients.length > 0 && (
+                            <OrderItemCustomizations>
+                              <strong>Sem:</strong>
+                              {item.removedIngredients.map((ingredient, idx) => (
+                                <CustomizationItem key={idx}>
+                                  {ingredient}
+                                </CustomizationItem>
+                              ))}
+                            </OrderItemCustomizations>
+                          )}
+                          
+                          {/* Observações */}
+                          {item.notes && (
+                            <OrderItemNotes>
+                              <NoteIcon><FaStickyNote /></NoteIcon>
+                              <span>{item.notes}</span>
+                            </OrderItemNotes>
+                          )}
+                          
+                          <OrderItemActions>
+                            <QuantityValue>{item.quantity}</QuantityValue>
+                            <OrderItemTotal>
+                              R$ {(item.price * item.quantity).toFixed(2)}
+                            </OrderItemTotal>
+                          </OrderItemActions>
+                        </OrderItem>
+                      ))}
+                    </>
+                  )}
+                </>
               )}
             </OrderItemsList>
             
@@ -776,9 +1354,13 @@ const Order = () => {
                   <span>Subtotal</span>
                   <span>R$ {orderTotal.toFixed(2)}</span>
                 </SummaryRow>
+                <SummaryRow>
+                  <span>Taxa de Serviço (10%)</span>
+                  <span>R$ {(orderTotal * 0.1).toFixed(2)}</span>
+                </SummaryRow>
                 <TotalRow>
                   <span>Total</span>
-                  <span>R$ {orderTotal.toFixed(2)}</span>
+                  <span>R$ {(orderTotal * 1.1).toFixed(2)}</span>
                 </TotalRow>
               </OrderSummary>
               
@@ -786,7 +1368,7 @@ const Order = () => {
                 <OrderButton 
                   primary
                   onClick={handleSendOrder}
-                  disabled={orderItems.length === 0}
+                  disabled={pendingItems.length === 0}
                 >
                   <FaCheck />
                   Enviar para Cozinha
@@ -799,19 +1381,113 @@ const Order = () => {
                   Pagamento
                 </OrderButton>
               </OrderActions>
+              
+              {/* Histórico do Pedido */}
+              {orderHistory.length > 0 && (
+                <OrderHistory>
+                  <OrderHistoryTitle>Histórico do Pedido</OrderHistoryTitle>
+                  {orderHistory.map((event, index) => (
+                    <OrderHistoryItem key={index}>
+                      <span>{event.description}</span>
+                      <OrderHistoryStatus status={event.status}>
+                        {event.timestamp}
+                      </OrderHistoryStatus>
+                    </OrderHistoryItem>
+                  ))}
+                </OrderHistory>
+              )}
             </OrderFooter>
           </OrderSection>
         </OrderGrid>
       </Container>
       
+      {/* Modal de Observações */}
+      {showNotesModal && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Observações</ModalTitle>
+              <CloseButton onClick={() => setShowNotesModal(false)}>
+                <FaTimes />
+              </CloseButton>
+            </ModalHeader>
+            
+            <FormGroup>
+              <FormLabel>Adicione instruções especiais para este item:</FormLabel>
+              <TextArea
+                value={itemNotes}
+                onChange={(e) => setItemNotes(e.target.value)}
+                placeholder="Ex: Sem cebola, molho à parte, etc."
+              />
+            </FormGroup>
+            
+            <ModalActions>
+              <ModalButton onClick={() => setShowNotesModal(false)}>
+                Cancelar
+              </ModalButton>
+              <ModalButton primary onClick={handleSaveNotes}>
+                Salvar
+              </ModalButton>
+            </ModalActions>
+          </ModalContent>
+        </Modal>
+      )}
+      
+      {/* Modal de Personalização */}
+      {showCustomizationModal && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Personalizar Item</ModalTitle>
+              <CloseButton onClick={() => setShowCustomizationModal(false)}>
+                <FaTimes />
+              </CloseButton>
+            </ModalHeader>
+            
+            <FormGroup>
+              <FormLabel>Remover ingredientes:</FormLabel>
+              <CheckboxGroup>
+                {availableIngredients.map((ingredient, index) => (
+                  <CheckboxItem key={index}>
+                    <Checkbox
+                      type="checkbox"
+                      checked={removedIngredients.includes(ingredient)}
+                      onChange={() => handleIngredientToggle(ingredient)}
+                    />
+                    {ingredient}
+                  </CheckboxItem>
+                ))}
+              </CheckboxGroup>
+            </FormGroup>
+            
+            <ModalActions>
+              <ModalButton onClick={() => setShowCustomizationModal(false)}>
+                Cancelar
+              </ModalButton>
+              <ModalButton primary onClick={handleSaveCustomization}>
+                Confirmar
+              </ModalButton>
+            </ModalActions>
+          </ModalContent>
+        </Modal>
+      )}
+      
       {/* Modal de Confirmação de Envio */}
       {showSendOrderModal && (
-        <OrderModal>
+        <Modal>
           <ModalContent>
-            <ModalTitle>Confirmar Pedido</ModalTitle>
+            <ModalHeader>
+              <ModalTitle>Confirmar Pedido</ModalTitle>
+              <CloseButton onClick={() => setShowSendOrderModal(false)}>
+                <FaTimes />
+              </CloseButton>
+            </ModalHeader>
+            
             <ModalText>
-              Deseja enviar o pedido para a cozinha? Esta ação não pode ser desfeita.
+              Deseja enviar {pendingItems.length} {pendingItems.length === 1 ? 'item' : 'itens'} para a cozinha? 
+              Esta ação não pode ser desfeita e os itens não poderão ser modificados após o envio.
             </ModalText>
+            
             <ModalActions>
               <ModalButton onClick={() => setShowSendOrderModal(false)}>
                 Cancelar
@@ -821,19 +1497,46 @@ const Order = () => {
               </ModalButton>
             </ModalActions>
           </ModalContent>
-        </OrderModal>
+        </Modal>
       )}
       
       {/* Modal de Pagamento */}
       {showPaymentModal && (
-        <OrderModal>
+        <Modal>
           <ModalContent>
-            <ModalTitle>Pagamento</ModalTitle>
-            <ModalText>
-              Valor total a pagar: R$ {orderTotal.toFixed(2)}
-              <br /><br />
-              Selecione a forma de pagamento:
-            </ModalText>
+            <ModalHeader>
+              <ModalTitle>Pagamento</ModalTitle>
+              <CloseButton onClick={() => setShowPaymentModal(false)}>
+                <FaTimes />
+              </CloseButton>
+            </ModalHeader>
+            
+            <FormGroup>
+              <FormLabel>Valor total a pagar:</FormLabel>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                R$ {(orderTotal * 1.1).toFixed(2)}
+              </div>
+              
+              <FormLabel>Forma de pagamento:</FormLabel>
+              <RadioGroup>
+                {paymentMethods.map(method => (
+                  <RadioItem 
+                    key={method.id}
+                    selected={selectedPaymentMethod === method.id}
+                  >
+                    <Radio
+                      type="radio"
+                      name="paymentMethod"
+                      checked={selectedPaymentMethod === method.id}
+                      onChange={() => setSelectedPaymentMethod(method.id)}
+                    />
+                    <PaymentIcon>{method.icon}</PaymentIcon>
+                    {method.label}
+                  </RadioItem>
+                ))}
+              </RadioGroup>
+            </FormGroup>
+            
             <ModalActions>
               <ModalButton onClick={() => setShowPaymentModal(false)}>
                 Cancelar
@@ -843,7 +1546,7 @@ const Order = () => {
               </ModalButton>
             </ModalActions>
           </ModalContent>
-        </OrderModal>
+        </Modal>
       )}
     </>
   );

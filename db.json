@@ -1,0 +1,25 @@
+{
+    "categories": [
+      { "id": 1, "name": "Hambúrgueres", "description": "Os melhores hambúrgueres" },
+      { "id": 2, "name": "Bebidas", "description": "Refrigerantes e sucos" }
+    ],
+    "products": [
+      { "id": 1, "name": "Hambúrguer Clássico", "price": 24.90, "category": 1 },
+      { "id": 2, "name": "Refrigerante", "price": 5.90, "category": 2 }
+    ],
+    "tables": [
+      { "id": 1, "number": 1, "status": "occupied", "capacity": 4 }
+    ],
+    "orders": [
+      {
+        "id": 1,
+        "tableId": 1,
+        "items": [
+          { "id": "item1", "productId": 1, "quantity": 1, "price": 24.90, "status": "pending" },
+          { "id": "item2", "productId": 2, "quantity": 2, "price": 5.90, "status": "pending" }
+        ],
+        "status": "active",
+        "subtotal": 36.70
+      }
+    ]
+  }

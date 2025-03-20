@@ -89,13 +89,18 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Categoria inválida' });
     }
     
+    // Garantir que ingredients seja um array
+    const ingredientsArray = ingredients ? 
+      (Array.isArray(ingredients) ? ingredients : [ingredients]) : 
+      [];
+    
     const product = await Product.create({
       name,
       description,
       price,
       category,
       imageUrl,
-      ingredients,
+      ingredients: ingredientsArray,
       isAvailable,
       preparationTime,
       featuredItem
@@ -180,7 +185,7 @@ exports.deleteProduct = async (req, res) => {
     }
     
     // Hard delete
-    await product.remove();
+    await product.deleteOne();
     
     res.json({
       success: true,

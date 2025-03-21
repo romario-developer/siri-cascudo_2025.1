@@ -50,6 +50,6 @@ server.use(middlewares);
 server.use('/api', router);
 
 // Iniciar servidor
-server.listen(5000, () => {
+server.listen(5001, () => {
   console.log('JSON Server está rodando em http://localhost:5000');
 });

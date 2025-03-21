@@ -1,26 +1,9 @@
-const theme = {
-    colors: {
-      primary: '#D32F2F',      // Cor principal da marca (vermelho)
-      secondary: '#FFC107',    // Cor secundária (âmbar)
-      tertiary: '#4CAF50',     // Cor terciária (verde)
-      background: '#FFFFFF',   // Cor de fundo
-      text: '#333333',         // Cor principal do texto
-      lightText: '#666666',    // Cor de texto mais clara
-      error: '#B00020',        // Cor de erro
-      success: '#4CAF50',      // Cor de sucesso
-      warning: '#FF9800',      // Cor de aviso
-      info: '#2196F3',         // Cor de informação
-    },
-    fonts: {
-      main: "'Roboto', sans-serif",
-      secondary: "'Poppins', sans-serif",
-    },
-    fontSizes: {
-      small: '0.875rem',       // 14px
-      medium: '1rem',          // 16px
-      large: '1.25rem',        // 20px
-      xlarge: '1.5rem',        // 24px
-      xxlarge: '2rem',         // 32px
+import { unifiedTheme } from '@siri-cascudo/shared/styles/theme';
+
+export const theme = unifiedTheme;
+      large: '1.25rem',        // 20px;
+      xlarge: '1.5rem',        // 24px;
+      xxlarge: '2rem',         // 32px;
     },
     breakpoints: {
       mobile: '576px',

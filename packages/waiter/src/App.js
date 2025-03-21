@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import Login from './pages/Login';
 import Tables from './pages/Tables';
 import Order from './pages/Order';
+import OrderHistory from './pages/OrderHistory';
 
 const AppContainer = styled.div`
   display: flex;
@@ -41,7 +42,7 @@ function App() {
         } />
         <Route path="/history" element={
           <ProtectedRoute>
-            <div>Histórico de Pedidos (placeholder)</div>
+            <OrderHistory />
           </ProtectedRoute>
         } />
         <Route path="*" element={<div>404 - Página Não Encontrada</div>} />

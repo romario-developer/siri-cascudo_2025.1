@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { 
   FaArrowLeft, 
@@ -15,8 +16,35 @@ import {
   FaTimes,
   FaExclamationTriangle,
   FaRegClock,
-  FaBan
+  FaBan,
+  FaSearch
 } from 'react-icons/fa';
+
+// Importar componentes
+import Cart from '../components/Cart';
+import ProductItem from '../components/ProductItem';
+import CategoryList from '../components/CategoryList';
+
+// Importar serviços
+import productService from '../services/productService';
+import categoryService from '../services/categoryService';
+import tableService from '../services/tableService';
+import socketService from '../services/socketService';
+
+// Importar ações e seletores do Redux
+import { setTableId } from '../store/reducers/cartSlice';
+import { 
+  fetchActiveOrders, 
+  fetchOrderById, 
+  updateOrder, 
+  changeOrderStatus,
+  setupOrderSocketListeners
+} from '../store/thunks/orderThunks';
+import {
+  selectActiveOrders,
+  selectCurrentOrder,
+  selectOrderLoading
+} from '../store/reducers/orderSlice';
 
 // Componentes estilizados para a interface
 const Header = styled.header`
@@ -65,11 +93,66 @@ const OrderGrid = styled.div`
   }
 `;
 
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #D32F2F;
+  }
+`;
+
+const SearchInputContainer = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
+const SearchIcon = styled.span`
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+`;
+
+const ProductsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  color: #666;
+  font-size: 1.1rem;
+`;
+
+const ErrorContainer = styled.div`
+  background-color: rgba(211, 47, 47, 0.1);
+  color: #D32F2F;
+  padding: 1rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
 const MenuSection = styled.div`
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  padding: 1rem;
 `;
 
 const TableInfoBar = styled.div`
@@ -147,7 +230,7 @@ const SearchContainer = styled.div`
   border-bottom: 1px solid #eee;
 `;
 
-const SearchInput = styled.input`
+const ProductSearchInput = styled.input`
   width: 100%;
   padding: 0.75rem 1rem;
   border: 1px solid #ddd;
@@ -189,7 +272,7 @@ const CategoryButton = styled.button`
   }
 `;
 
-const ProductsGrid = styled.div`
+const MenuProductsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1rem;
@@ -691,15 +774,23 @@ const Tab = styled.button`
 const Order = () => {
   const { tableId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   
   // Estados
   const [table, setTable] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [orderSuccess, setOrderSuccess] = useState(false);
+  
+  // Estados para o pedido
   const [orderItems, setOrderItems] = useState([]);
   const [orderTotal, setOrderTotal] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState([]);
   
   // Estados para modais
   const [showSendOrderModal, setShowSendOrderModal] = useState(false);
@@ -898,16 +989,38 @@ const Order = () => {
     setFilteredProducts(filtered);
   }, [activeCategory, searchQuery, products]);
   
-  // Categorias disponíveis
-  const categories = [
-    { id: 'all', name: 'Todos' },
-    { id: 'hamburger', name: 'Hambúrgueres' },
-    { id: 'chicken', name: 'Frango' },
-    { id: 'vegetarian', name: 'Vegetarianos' },
-    { id: 'sides', name: 'Acompanhamentos' },
-    { id: 'drinks', name: 'Bebidas' },
-    { id: 'desserts', name: 'Sobremesas' },
-  ];
+  // Carregar categorias da API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryService.getCategories();
+        // Adicionar a categoria 'Todos' no início
+        const allCategories = [
+          { id: 'all', name: 'Todos' },
+          ...response.data.map(category => ({
+            id: category._id,
+            name: category.name
+          }))
+        ];
+        setCategories(allCategories);
+        setActiveCategory('all');
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+        // Fallback para categorias padrão em caso de erro
+        setCategories([
+          { id: 'all', name: 'Todos' },
+          { id: 'hamburger', name: 'Hambúrgueres' },
+          { id: 'chicken', name: 'Frango' },
+          { id: 'vegetarian', name: 'Vegetarianos' },
+          { id: 'sides', name: 'Acompanhamentos' },
+          { id: 'drinks', name: 'Bebidas' },
+          { id: 'desserts', name: 'Sobremesas' },
+        ]);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
   
   // Opções de pagamento
   const paymentMethods = [
@@ -1149,7 +1262,7 @@ const Order = () => {
         <OrderGrid>
           <MenuSection>
             <SearchContainer>
-              <SearchInput
+              <ProductSearchInput
                 type="text"
                 placeholder="Buscar produtos..."
                 value={searchQuery}
@@ -1169,7 +1282,7 @@ const Order = () => {
               ))}
             </CategoriesContainer>
             
-            <ProductsGrid>
+            <MenuProductsGrid>
               {filteredProducts.map(product => (
                 <ProductCard 
                   key={product.id}
@@ -1188,7 +1301,7 @@ const Order = () => {
                   Nenhum produto encontrado.
                 </div>
               )}
-            </ProductsGrid>
+            </MenuProductsGrid>
           </MenuSection>
           
           <OrderSection>

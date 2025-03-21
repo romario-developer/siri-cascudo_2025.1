@@ -6,12 +6,17 @@ import { ThemeProvider } from 'styled-components';
 import App from './App';
 import theme from './styles/theme';
 import GlobalStyle from './styles/global';
-import { createStore } from 'redux';
+import { configureStore } from '@reduxjs/toolkit';
+import cartReducer from './store/reducers/cartSlice';
+import orderReducer from './store/reducers/orderSlice';
 
-// Criar um store simplificado
-const initialState = {};
-const reducer = (state = initialState, action) => state;
-const store = createStore(reducer);
+// Configurar o store com Redux Toolkit
+const store = configureStore({
+  reducer: {
+    cart: cartReducer,
+    order: orderReducer
+  }
+});
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

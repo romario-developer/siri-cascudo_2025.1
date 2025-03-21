@@ -363,7 +363,7 @@ const Tables = () => {
         </LogoContainer>
         <UserName>{waiterName}</UserName>
         <ActionsContainer>
-          <ActionButton onClick={handleHistoryClick} title="Histórico de Pedidos">
+          <ActionButton onClick={() => navigate('/history')} title="Histórico de Pedidos">
             <FaHistory />
           </ActionButton>
           <ActionButton onClick={handleLogout} title="Sair">
